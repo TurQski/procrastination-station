@@ -6,7 +6,7 @@ export default function Home() {
       <a className="skip-link" href="#main">Skip to content</a>
       <header className="site-header">
         <Link href="/" className="brand" aria-label="Procrastination Station home"><span className="brand-mark" aria-hidden="true">p<span>.</span></span><span>procrastination<br />station<span className="brand-dot">.</span></span></Link>
-        <nav aria-label="Main navigation"><a href="#how-it-works">How it works</a><a className="nav-cta" href="#goal-form">Find your first step <span aria-hidden="true">↗</span></a></nav>
+        <nav aria-label="Main navigation"><Link className="account-link" href="/dashboard">My goals</Link><a className="nav-cta" href="#goal-form">Find your first step <span aria-hidden="true">↗</span></a></nav>
       </header>
       <main id="main">
         <section className="hero" aria-labelledby="hero-title">

@@ -1,9 +1,11 @@
-# Secrets and local configuration (including example env files for now)
+# Secrets and local configuration
 .env
 .env.*
 *.env
 *.env.*
 .envrc
+# Only this root template may be committed; never actual values.
+!/.env.example
 *.pem
 *.key
 *.p12

@@ -1,15 +1,21 @@
-# Development — increment 1
+# Development — Increment 2
 
-## Local setup
+The selected stack is Next.js App Router / TypeScript / Tailwind, Supabase PostgreSQL and Auth, server-side Next.js route handlers, Vercel, and GitHub Actions.
 
-Install Node.js 22 LTS (22.12 or later) (the version family in `.nvmrc`) and npm. Then, from this repository:
+**Live Supabase verification is pending external configuration.** See [the step-by-step setup guide](SUPABASE-SETUP.md) before claiming the database or email flow works. Original requirements/source snapshots and the first increment's verification record are retained.
+
+## Run locally
+
+Install Node.js 22.12+ (22.x), then:
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open http://localhost:3000. No accounts or environment variables are needed for this increment.
+Open http://127.0.0.1:3000. Public previews work without configuration. Account and database operations return a clear 503 when server configuration is absent; there is no fallback persistence. Copy the placeholder-only `.env.example` into `.env.local` if no local file exists and follow the setup guide.
+
+## Checks
 
 ```sh
 npm run lint
@@ -18,57 +24,56 @@ npm test
 npm run build
 npx playwright install --no-shell chromium
 npm run test:e2e
+# Only after configuring the real development database and two test users:
+npm run test:integration
 ```
 
-Browser tests start the production server, so build first. CI performs the same checks on pull requests and pushes to `main` or `feat/**`. CI has not run on GitHub until the workflow is pushed. Keep changes on feature branches; merging or pushing to main requires the owner's approval.
+Unit/handler/component tests isolate external dependencies and do not verify Supabase. Browser tests cover the public preview. The separate live suite requires actual Supabase credentials and uses real authenticated sessions. GitHub CI runs the credential-free checks; it does not run the live suite or apply migrations. Browser tests require a production build first.
 
-## Implemented scope
+## Data and access design
 
-- Next.js App Router, TypeScript, Tailwind CSS, responsive branding and landing page.
-- Goal, target date, and effort input with accessible validation and empty/error states.
-- Pure deterministic five-stage plan preview with positive durations totaling the requested budget and dates spanning today through the target.
-- Preview generation is synchronous and immediate; it has no fabricated loading delay or network request. Loading, retry, and save states belong to the future database/API increment.
-- Previews are expressly unsaved and disappear on refresh. There is no goal-creation endpoint, database, localStorage persistence, or saved-goal dashboard yet. This increment does not meet the persistent MVP requirement by itself.
+- `supabase/migrations/202610180001_goals_tasks.sql` creates the requested goals/tasks fields, constraints, indexes, grants, RLS, and atomic plan-creation RPC.
+- Goals belong to `auth.uid()`; task access requires ownership of the parent goal. Both SELECT and mutation policies apply, and column grants prevent changing owner IDs, parent IDs, or timestamps. The application never accepts a caller-provided owner ID.
+- Saving regenerates the existing deterministic plan on the server from validated inputs, then inserts the goal and five tasks in one transaction. Failed task inserts roll back the goal.
+- Progress is calculated from persisted task completion, not stored separately. Checkbox UI waits for the API response and reloads persisted state. No localStorage or mock database is used.
+- Goal PATCH supports title/description/deadline updates; task PATCH supports completion only. Task creation is through the plan RPC; deleting a goal cascades to its tasks. Individual task creation/deletion and goal-edit forms are outside this increment's UI scope.
 
-## Structure
+## Authentication
 
-- `src/app/`: App Router page, document layout, and global styles.
-- `src/components/`: interactive form and preview.
-- `src/lib/planner.ts`: storage-independent validation and deterministic planning.
-- `tests/`: browser checks and unit-test setup; unit/component tests live beside source.
-- `.github/workflows/ci.yml`: lint, types, tests, production build, and browser checks.
-- `docs/`: original requirements snapshots, source notes, and ongoing development records.
+The app uses Supabase email one-time codes. Existing authorized accounts can use the built-in email sender for this increment; custom SMTP is not a testing prerequisite. Public signup defaults off. See the setup guide for both organization-address authorization and Auth-user creation (these are distinct).
 
-The original requirements snapshots remain unchanged historical documents. The selected stack is now Next.js / TypeScript / Tailwind, Supabase PostgreSQL, Next.js server endpoints, Vercel, and GitHub Actions.
+Supabase is imported only in server modules. The browser calls same-origin Next.js endpoints; it receives no session tokens or database keys in response bodies. Sessions are stored in HttpOnly, SameSite=Lax cookies, Secure in production. Every private request calls `getUser()` to validate the session; the server client refreshes eligible tokens and writes refreshed cookies from the route handler. A fully expired session returns 401 and the UI requests sign-in again, while provider/network failures remain retryable errors.
 
-## Before database integration — proposed safe access model
+No auth is read from Server Components, so cookie refresh happens in route handlers rather than a global proxy. Dashboard pages are public shells with private data fetched from authenticated APIs. Responses are private/no-store. Focus reloads the dashboard, avoiding stale account data after returning to a tab. Mutation endpoints enforce an exact Origin check, JSON validation, and a 16 KiB streamed body limit (deletes/signout require origin but no body). Supabase enforces auth rate limits; public signup will need the SMTP/abuse configuration described in the setup guide.
 
-Use Supabase Auth email one-time codes and PostgreSQL row-level security (RLS). This is the proposed next increment, not implemented or approved yet. A small sign-in step lets users recover their private goals across browsers without creating an application-managed password system. An unauthenticated shared table would expose or mix people's goals and is not suitable for public deployment.
+## API routes
 
-Next.js server endpoints should use the caller's Supabase session and a publishable API key, so RLS applies to every query. Each goal has an owner ID matching `auth.uid()`; every task belongs to a goal that the caller owns. Enable RLS with ownership checks for every allowed operation, including insert/update checks. Never accept a client-supplied owner ID as proof of ownership. Create a goal and its tasks atomically in a transaction. Verify cross-user isolation and refresh persistence before exposing saved goals.
+| Method and path | Behavior |
+| --- | --- |
+| POST `/api/auth/code` | Request email code; signup disabled by default |
+| POST `/api/auth/verify` | Verify code and set server session cookies |
+| GET `/api/auth/session` | Return verified user identity or signed-out state |
+| POST `/api/auth/signout` | End this browser's session |
+| GET `/api/goals` | List the caller's goals and tasks |
+| POST `/api/goals` | Validate and atomically save a generated plan |
+| GET `/api/goals/:id` | Retrieve an owned goal and ordered tasks |
+| PATCH `/api/goals/:id` | Update allowed goal fields |
+| DELETE `/api/goals/:id` | Delete owned goal and its tasks |
+| PATCH `/api/tasks/:id` | Set completion on an owned task |
 
-No secret/service-role key is needed for ordinary user CRUD. Do not use a service-role client to bypass RLS. Keep session cookies server-managed with appropriate secure settings, verify users on the server, validate every request, and avoid logging goal text or tokens. Public endpoints will need size limits, rate limits, and origin/CSRF protections appropriate to their session mechanism.
+Unauthorized/expired sessions return 401, inaccessible IDs return 404, invalid input returns 400, unsupported content types return 415, oversized bodies return 413, and transient/configuration failures return 503. Provider details and tokens are not sent to the browser or logged.
 
-### Required accounts and configuration
+## Environment variables
 
-1. **Supabase:** create or select a project with PostgreSQL and email Auth enabled. Provide the project URL and publishable API key through local/Vercel environment settings. No database password or service-role key should be pasted into chat or committed.
-2. **Server-only environment variables:** `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`. These will be read only in server modules; no `NEXT_PUBLIC_` database variables are planned. The publishable key is designed to be public but does not grant access without correct RLS. No variables are required or read by this first increment.
-3. **Email delivery:** for public email-code sign-in, configure a supported custom SMTP provider in Supabase, a verified sender, and an email template that includes the one-time code. Supabase's built-in sender is restricted and is not a production email service. Store SMTP credentials in Supabase, not the app repository.
-4. **Schema:** after the access approach is agreed, SQL migrations will create goals/tasks, ownership constraints, indexes, and RLS policies. Apply them to the chosen Supabase project; the dashboard SQL editor is sufficient. Do not expose a database administrator credential to the browser.
-5. **Vercel:** an account linked to GitHub with access to this repository. Import as Next.js, repository root as project root, Node.js 22.x, npm install/build defaults, and configure the two server variables separately for Preview and Production. Use a separate Supabase development project for previews where practical.
-6. **Auth URLs:** set the Supabase site URL to the eventual production URL and allow only the required local/callback URLs if the chosen flow uses redirects. Local development uses `http://localhost:3000`. An email-code entry flow does not need arbitrary preview-domain redirect wildcards.
-7. **GitHub Actions:** enable Actions for the repository. This first CI workflow needs no secrets or database connection. Configure branch protection for passing checks before merging to `main` if desired.
+| Variable | Where | Purpose |
+| --- | --- | --- |
+| `SUPABASE_URL` | Server only | Development project's API URL |
+| `SUPABASE_PUBLISHABLE_KEY` | Server only | Publishable key; no administrator key |
+| `APP_ORIGIN` | Server only | Exact browser origin for mutation protection |
+| `AUTH_ALLOW_SIGNUP` | Server only | Keep `false` for restricted testing |
+| `SUPABASE_TEST_USER_A_EMAIL/PASSWORD`, `SUPABASE_TEST_USER_B_EMAIL/PASSWORD` | Local test environment only | Two real confirmed accounts for opt-in live integration tests |
 
-Decisions needed before the next increment: confirm email-code sign-in, supply/configure the Supabase project, and choose the email sender. Deployment follows review and authorization; no deployment or direct push to main is part of increment 1.
-
-## Official implementation references
-
-- [Next.js installation](https://nextjs.org/docs/app/getting-started/installation)
-- [Tailwind with Next.js](https://tailwindcss.com/docs/installation/framework-guides/nextjs)
-- [Supabase server-side Auth](https://supabase.com/docs/guides/auth/server-side/creating-a-client)
-- [Supabase row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security)
-- [Supabase email delivery](https://supabase.com/docs/guides/auth/auth-smtp)
-- [Vercel Next.js deployment](https://vercel.com/docs/frameworks/full-stack/nextjs)
+No account variables are required for builds or public previews. Never use `NEXT_PUBLIC_` for a privileged key. See [Supabase setup](SUPABASE-SETUP.md) for the exact setup order and manual persistence checks.
 
 ## Tooling notes
 

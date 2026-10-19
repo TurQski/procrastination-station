@@ -1,5 +1,6 @@
 "use client";
 
+import { SavePlan } from "./save-plan";
 import { useRef, useState, type FormEvent } from "react";
 import { addDays, generatePlan, localDateString, type FieldErrors, type Plan } from "@/lib/planner";
 
@@ -12,6 +13,8 @@ export function GoalPlanner() {
   const [targetDate, setTargetDate] = useState("");
   const [minutes, setMinutes] = useState(60);
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [saved, setSaved] = useState(false);
+  const [generation, setGeneration] = useState(0);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [unexpectedError, setUnexpectedError] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
@@ -31,6 +34,8 @@ export function GoalPlanner() {
       }
       setErrors({});
       setPlan(result.plan);
+      setSaved(false);
+      setGeneration((value) => value + 1);
       requestAnimationFrame(() => resultRef.current?.focus());
     } catch {
       setPlan(null);
@@ -60,14 +65,15 @@ export function GoalPlanner() {
           <button className="primary-button" type="submit">{plan ? "Regenerate my preview" : "Find my first step"}<span aria-hidden="true">↗</span></button>
           <p className="form-disclosure">A rule-based starting plan, not AI advice. Adjust estimates to fit your goal.</p>
         </form>
-        <div className="preview-notice"><span aria-hidden="true">◌</span><p><strong>Preview mode</strong> — goals aren’t saved yet. Your preview disappears on refresh.</p></div>
+        <div className="preview-notice"><span aria-hidden="true">◌</span><p><strong>Preview mode</strong> — goals aren’t saved yet. Preview freely; sign in and save to keep your plan.</p></div>
       </section>
       {plan ? <section className="plan-result" aria-labelledby="plan-title" ref={resultRef} tabIndex={-1}>
-        <div className="result-heading"><span className="ticket-label">YOUR STARTING PLAN</span><span className="unsaved-badge">Not saved</span></div>
+        <div className="result-heading"><span className="ticket-label">YOUR STARTING PLAN</span><span className="unsaved-badge">{saved ? "Saved" : "Not saved"}</span></div>
         <h2 id="plan-title">{plan.goal}</h2>
         <p className="plan-meta">5 small steps · {plan.minutes} minutes total · Aim for {displayDate(plan.targetDate)}</p>
         <ol className="task-list">{plan.tasks.map((task, index) => <li key={task.title}><span className="task-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><div><h3>{task.title}</h3><p>{task.description}</p><span className="task-meta">{task.minutes} min <span aria-hidden="true">/</span> Suggested {displayDate(task.suggestedDate)}</span></div></li>)}</ol>
         <p className="result-note">This is a general framework. If a step needs more time, reduce the scope or increase your time budget.</p>
+        <SavePlan key={generation} plan={plan} onSaved={() => setSaved(true)} />
       </section> : <div className="empty-preview"><span aria-hidden="true">✳</span><p>No perfect plan required.<br /><strong>Your first step starts above.</strong></p></div>}
     </div>
   );
