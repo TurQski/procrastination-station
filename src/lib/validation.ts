@@ -2,7 +2,7 @@ import { z } from "zod";
 const date = z.iso.date();
 export const idSchema = z.uuid();
 export const emailSchema = z.object({ email: z.email().max(254).transform((value) => value.toLowerCase()) }).strict();
-export const codeSchema = emailSchema.extend({ token: z.string().regex(/^\d{6,10}$/, "Enter the numeric code from your email.") });
+export const passwordSchema = emailSchema.extend({ password: z.string().min(1, "Enter your password.").max(4096) });
 export const createGoalSchema = z.object({
   goal: z.string().trim().min(8).max(240),
   description: z.string().trim().max(4000).default(""),

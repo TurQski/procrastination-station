@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createGoalSchema, updateGoalSchema, updateTaskSchema, currentPlanningDate, codeSchema } from "./validation";
+import { createGoalSchema, updateGoalSchema, updateTaskSchema, currentPlanningDate, passwordSchema } from "./validation";
 import { progress } from "./models";
 const input = { goal: "Finish my essay", minutes: 60, targetDate: "2026-10-25", startDate: "2026-10-18" };
 describe("server request validation", () => {
@@ -24,9 +24,9 @@ describe("server request validation", () => {
     for (const day of ["2026-10-17", "2026-10-18", "2026-10-19"]) expect(currentPlanningDate(day, now)).toBe(true);
     for (const day of ["2026-10-16", "2026-10-20", "invalid"]) expect(currentPlanningDate(day, now)).toBe(false);
   });
-  it("validates email codes without accepting arbitrary strings", () => {
-    expect(codeSchema.safeParse({ email: "person@example.com", token: "123456" }).success).toBe(true);
-    expect(codeSchema.safeParse({ email: "person@example.com", token: "bad" }).success).toBe(false);
+  it("validates passwords without trimming them", () => {
+    expect(passwordSchema.safeParse({ email: "person@example.com", password: " secret " }).success).toBe(true);
+    expect(passwordSchema.safeParse({ email: "person@example.com", password: "" }).success).toBe(false);
   });
 });
 describe("persisted task progress", () => {

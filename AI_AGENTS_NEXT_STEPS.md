@@ -1,110 +1,58 @@
-# Procrastination Station — AI agent handoff
+# Procrastination Station - AI agent handoff
 
-Last updated: October 18, 2026. Target: a functional, publicly deployed CS4800 MVP by October 19, 2026.
+Updated October 18, 2026 (America/Los_Angeles). MVP target: October 19; confirm the exact Canvas cutoff.
 
-## Start here
+## Current checkpoint
 
-Increment 1 was approved. Increment 2 is implemented locally and paused for Supabase configuration and real persistence verification. **Do not restart scaffolding or claim database functionality is verified.**
+Work remains on feat/persistence-auth-dashboard, based on 3e39a2f (handoff), 113f043 (persistence), and e9e5fe3 (foundation). The user approved password-auth implementation and local/live verification. This increment has not been committed, pushed, or deployed. Inspect Git status before continuing and preserve user changes.
 
-Read these before continuing:
+The existing SQL migration was applied successfully to the development Supabase project. Never rerun it there, drop tables, or disable RLS. Seven real database integration checks passed before and after the password-auth change.
 
-1. [Development guide](docs/DEVELOPMENT.md) — current architecture and commands.
-2. [Supabase setup](docs/SUPABASE-SETUP.md) — exact external configuration and manual verification instructions.
-3. [Increment 2 verification record](docs/INCREMENT-2.md) — passed checks and remaining verification.
-4. [Project requirements](docs/CS4800%20Final%20Project%20-%20Requirements.md) — course scope.
+## Implemented MVP
 
-## Repository checkpoint
+- Existing responsive Next.js / TypeScript / Tailwind design and deterministic five-stage planner.
+- Public unsaved previews; saving requires authentication.
+- Email/password sign-in for existing confirmed Supabase users via POST /api/auth/signin; no public signup endpoint. Email-code endpoints have been removed for this MVP. SMTP and templates are not needed for sign-in.
+- Existing server-only Supabase SSR client, HttpOnly / SameSite=Lax cookies (Secure in production), getUser verification on private requests, cookie refresh in route handlers, and current-browser sign-out.
+- Existing goals/tasks schema, ownership-based RLS, restricted column grants, and atomic create_goal_plan RPC remain unchanged.
+- Dashboard, goal detail, saved tasks, completion, calculated progress, deletion confirmation, loading/empty/error/reauthentication states. Goal editing exists in the API only.
+- No privileged database key, localStorage persistence, or browser Supabase client.
 
-- Origin: `https://github.com/TurQski/procrastination-station.git`
-- Current branch: `feat/persistence-auth-dashboard`
-- Current implementation commit: `113f043` — Supabase auth, persistence endpoints, and private dashboard.
-- Foundation commit: `e9e5fe3`, on `feat/phase-1-foundation`.
-- Last recorded `main` / `origin/main`: `c0c082d`, initial documentation.
-- Working tree was clean before this handoff document was created.
-- Feature work has not been pushed; no deployment has been performed.
+## Verified in this increment
 
-Recheck branch, working tree, remotes, and history on resuming. Preserve all existing files, documentation, user changes, and Git history. This file is a checkpoint, not proof that repository or external configuration has remained unchanged.
+- Node 22.23.3 and npm 10.9.9 using a temporary runtime; the system installation previously defaulted to Node 24 and does not match package.json.
+- Lint, type checking, 71 unit/component/API tests, and production Webpack build passed.
+- Eight existing desktop/mobile browser/API checks passed.
+- Two full live desktop/mobile workflows passed against real Supabase using Microsoft Edge: A sign-in, save a goal, refresh persistence, task completion and 20% progress after refresh, dashboard retrieval, sign-out and signed-out API denial, B sign-in and 404/hidden A goal, A sign-in, deletion and refresh confirmation. Disposable records were cleaned up.
+- Seven live database regression tests passed: CRUD, independent sessions, cross-user isolation, anonymous denial, immutable ownership, rollback, deletion.
+- Cookie visibility and flags checked in the live browser suite; production HTTPS hosting and long-lived refresh-token rotation still require deployment verification.
 
-## What exists
+Playwright's downloaded Chromium failed on this PC with spawn UNKNOWN. Installed Edge worked using PLAYWRIGHT_CHANNEL=msedge. Chromium remains the CI default. Initial test-harness failures (unused import, test typing, UTF-8 BOM, immediate checkbox state expectation) were corrected; current verification records are in docs/INCREMENT-2.md.
 
-- Next.js App Router, TypeScript, Tailwind, responsive branded landing page, and deterministic goal planner.
-- Public plan previews that are explicitly unsaved; saving requires authentication.
-- Supabase email-code authentication with server-managed HttpOnly cookies and verified-user checks.
-- Goal/task schema, ownership-based RLS, and an atomic goal-plus-tasks creation function in [the SQL migration](supabase/migrations/202610180001_goals_tasks.sql).
-- Validated server endpoints for authentication, goal creation/list/detail/edit/delete, and task completion updates.
-- Dashboard, individual goal view, checklists, progress, deletion, and loading/empty/error/session-expiry UI.
-- Server-only environment configuration; no privileged database key is required.
-- GitHub Actions checks and an opt-in live Supabase integration suite.
+## Configuration and commands
 
-Keep the current design and planner. The planner is rule-based, not AI-generated or researched. Goal editing has an API but no editing form; focus on persistence and deployment readiness before adding features.
+Read docs/DEVELOPMENT.md and docs/SUPABASE-SETUP.md. Do not print .env.local or test credentials. .env.local is ignored. Keep SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, APP_ORIGIN, and AUTH_ALLOW_SIGNUP=false server-side. Keep Allow new users to sign up disabled in Supabase. The signup flag is only a retained reminder: no app signup endpoint exists.
 
-## Evidence so far
+Local test accounts live only in ignored environment files. Never put their passwords in CI, Vercel, source, traces, screenshots, or logs. Live browser artifacts disable traces, screenshots, and video. All live test records use unique disposable names and are cleaned up.
 
-Previously passed locally: lint, TypeScript, 67 unit/component/API-contract tests, production build, and 8 desktop/mobile browser/API checks. Existing tests were preserved. Browser checks ran without Supabase configuration.
-
-**Not yet verified:** migration application, real email delivery/sign-in, session refresh against Supabase, real CRUD, progress after browser refresh, two-user database isolation, hosted CI, or deployment. Mocked contract tests are not evidence of working RLS or database persistence.
-
-The previous production dependency audit found no vulnerabilities. Development-only lint dependencies had outstanding advisories; consult DEVELOPMENT.md and reassess when needed. Do not force dependency upgrades or downgrade Next.js just to silence an audit.
-
-## Immediate next step: configure Supabase
-
-Ask the user whether they have completed [SUPABASE-SETUP.md](docs/SUPABASE-SETUP.md). If not, walk them through that guide. Do not ask them to paste passwords, tokens, or environment-file contents into chat.
-
-1. Create a dedicated Supabase development project with the Data API enabled.
-2. Copy `.env.example` to `.env.local` only if the destination does not already exist. Configure locally:
-
-   ```dotenv
-   SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-   SUPABASE_PUBLISHABLE_KEY=sb_publishable_YOUR_KEY
-   APP_ORIGIN=http://127.0.0.1:3000
-   AUTH_ALLOW_SIGNUP=false
-   ```
-
-3. Use the new publishable key, not a service-role/secret key or legacy JWT key. Keep these settings server-only; do not add `NEXT_PUBLIC_` prefixes.
-4. Apply the version-controlled migration once through the SQL Editor. Check existing migration/schema state first; do not drop data or blindly rerun an applied migration.
-5. Enable email authentication, keep public signup disabled, and configure the local Site URL and Magic Link template to display `{{ .Token }}` as instructed in the guide.
-6. Create existing confirmed test accounts. Built-in email delivery is restricted to authorized organization-team addresses and has low sending limits; creating an Auth user alone does not authorize its email address for that sender. Custom SMTP is deferred until public signup.
-7. Prepare two distinct confirmed test users for ownership checks. Store their test credentials only in ignored local environment files, using the variable names in `.env.example`.
-
-No configured local environment or real database connection was available at the implementation checkpoint. Inspect environment presence without displaying secrets.
-
-## Resume verification in this order
-
-1. Inspect Git state and the documentation above; stay on this feature branch or a clearly named follow-up feature branch.
-2. Confirm Node 22.x (at least 22.12), install dependencies if needed, and confirm the external configuration is ready.
-3. Run `npm run test:integration` against the dedicated development project. It requires `SUPABASE_TEST_USER_A_EMAIL`, `SUPABASE_TEST_USER_A_PASSWORD`, `SUPABASE_TEST_USER_B_EMAIL`, and `SUPABASE_TEST_USER_B_PASSWORD`, plus the project settings. It tests real CRUD, independent-session persistence, ownership boundaries, anonymous denial, and transactional rollback.
-4. Run `npm run dev` and open exactly `http://127.0.0.1:3000`. Follow the guide's manual email-code and browser checks: preview, sign in, save, open goal, complete/uncomplete tasks, refresh, sign out, and inspect isolation with a second user. The password-based integration suite does not verify email delivery or browser cookie refresh.
-5. Fix any failures in small increments. Do not replace database operations with mock persistence or disable RLS to make tests pass.
-6. Run lint, type checking, unit tests, production build, and browser tests after changes. Record actual results and remaining limitations in DEVELOPMENT.md and INCREMENT-2.md.
-7. Present the verified change set and remaining deployment configuration. **Wait for explicit user approval before pushing or deploying.**
-
-Useful commands from the repository root:
-
-```sh
-git status --short --branch
-git remote -v
-git log -5 --oneline
-node --version
+```powershell
 npm ci
 npm run check
-npx playwright install --no-shell chromium
+$env:PLAYWRIGHT_CHANNEL='msedge' # Windows fallback; omit for standard Chromium
 npm run test:e2e
 npm run test:integration
+npm run test:e2e:live
+npm run dev
 ```
 
-The live integration command needs real configuration and creates disposable test records. Do not run it against a populated production project. Its passing result must be reported separately from credential-free tests.
+Use http://127.0.0.1:3000 exactly. The earlier temporary runtime is under the user's Temp/procrastination-station-node22/node-v22.23.3-win-x64 directory; use an installed Node 22 runtime or prepend that directory to PATH for this shell. Do not commit machine-specific paths.
 
-The earlier session used a temporary Node installation at `/tmp/ps-node-runtime/node-v22.23.3-darwin-arm64/bin` and Playwright browsers at `/tmp/ps-playwright-browsers`; these may no longer exist. Prefer a working Node 22 installation. If reusing that browser cache, set `PLAYWRIGHT_BROWSERS_PATH` accordingly. Existing dev/build scripts intentionally use Webpack because this environment blocked Turbopack's internal port binding.
+## Next: Vercel, after explicit approval
 
-## Approval and completion boundaries
+1. Review/commit the verified diff, push the feature branch only after approval, and verify hosted GitHub Actions. Do not merge or force-push without authorization.
+2. Confirm Vercel account/repository access, production data choice, exact HTTPS origin, and a restricted confirmed evaluator account shared privately.
+3. Configure Node 22.x, npm run build, and the four server variables. APP_ORIGIN must match the exact deployed HTTPS origin, no trailing slash. Set Supabase Site URL to production. Keep signup disabled.
+4. After approval, deploy and repeat sign-in/save/refresh/progress/sign-out/isolation/deletion over HTTPS. Verify Secure cookies in the hosted environment and review cookie refresh with an aged session. Do not treat the local test as hosted verification.
+5. Submit the verified public URL in Canvas; submission remains the user's task unless explicitly authorized.
 
-- Do not push to any branch or deploy until the user approves the next step. Never force-push or rewrite history.
-- Do not commit actual `.env` files or credentials; only `.env.example` is intended for version control.
-- All saved user data must persist in Supabase and be protected by ownership-based RLS.
-- Do not mark the persistence milestone complete until real database and browser persistence checks succeed.
-- Before public signup, configure custom SMTP and appropriate abuse controls. Before Vercel deployment, explain the required account, exact production origin, Supabase Auth settings, and environment variables. Keep production/preview configuration deliberate.
-- Prioritize the October 19 MVP over advanced AI or optional features.
-
-## Resume prompt
-
-> Read AI_AGENTS_NEXT_STEPS.md and the linked development/setup records. Resume Increment 2 at Supabase configuration and live persistence verification. Inspect the current Git and environment state without exposing secrets, preserve existing work, and tell me which external setup steps remain. Do not push or deploy without my approval.
+Password recovery, public signup, SMTP, advanced AI planning, and goal-edit UI are deferred. Password sign-in does not require SMTP; account help is through the project owner. Original requirements snapshots are historical and intentionally unchanged.
