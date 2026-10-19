@@ -1,3 +1,11 @@
+# Current interface checkpoint - October 19, 2026
+
+The user approved the v0 integration plan and implementation on feat/v0-dashboard-integration. The approved initial homepage is preserved; My Momentum is wired to real saved data, with an honest weekly-history empty state. Existing authentication, APIs, schema and RLS are preserved. Read docs/V0-INTEGRATION.md and its verification notes before changing the UI.
+
+The user approved committing and pushing this interface increment to its feature branch. Main merge and production deployment remain unapproved. Recheck Git and hosted CI status when resuming. The prior password-auth checkpoint below is historical and its branch/status statements are superseded by this paragraph. Preserve local environment files. No migrations or environment changes are required for this interface.
+
+---
+
 # Procrastination Station - AI agent handoff
 
 Updated October 18, 2026 (America/Los_Angeles). MVP target: October 19; confirm the exact Canvas cutoff.

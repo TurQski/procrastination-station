@@ -18,3 +18,5 @@ Current increment: responsive planning preview, server-side email/password authe
 Original requirements and assignment notes are preserved in [docs](docs/).
 
 The MVP signs in existing confirmed accounts with passwords; public signup is closed. SMTP and email templates are not needed. No password-reset UI is provided yet. See docs/SUPABASE-SETUP.md for setup and opt-in live browser testing.
+
+Interface integration: see [v0 integration notes](docs/V0-INTEGRATION.md) for the preserved homepage, real-data My Momentum dashboard, weekly-history empty state, and verification details.

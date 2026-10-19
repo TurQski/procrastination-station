@@ -5,6 +5,8 @@ import { useState } from "react";
 import { api, RequestError } from "@/lib/api-client";
 import { progress, type Goal } from "@/lib/models";
 import { useGoals, type Remote } from "./use-goals";
+import { MomentumDashboard } from './design/momentum-dashboard';
+import { SignOut } from './sign-out';
 import { AuthPanel } from "./auth-panel";
 
 function Gate<T>({ state, reload }: { state: Remote<T>; reload: () => Promise<void> }) {
@@ -17,15 +19,7 @@ function Meter({ goal }: { goal: Goal }) {
   const percent = progress(goal.tasks);
   return <div className="goal-progress"><div><span>{goal.tasks.filter((task) => task.completed).length} of {goal.tasks.length} steps</span><strong>{percent}%</strong></div><progress max={100} value={percent} aria-label={`Progress for ${goal.title}`} /></div>;
 }
-export function Dashboard() {
-  const { state, reload } = useGoals<{ goals: Goal[] }>("/api/goals");
-  return <>
-    <div className="dashboard-heading"><div><p className="eyebrow">YOUR NEXT SMALL STEP</p><h1>Look how far<br /><span>you can go.</span></h1><p>Saved goals. Small steps. Progress that stays with you.</p></div><Link className="primary-button" href="/#goal-form">Plan a new goal ↗</Link></div>
-    <Gate state={state} reload={reload} />
-    {state.status === "ready" && <div className="account-actions"><SignOut /></div>}
-    {state.status === "ready" && (state.data.goals.length ? <div className="goals-grid">{state.data.goals.map((goal) => <article className="goal-card" key={goal.id}><p className="ticket-label">AIM FOR {goal.deadline}</p><h2><Link href={`/dashboard/${goal.id}`}>{goal.title}</Link></h2>{goal.description && <p>{goal.description}</p>}<Meter goal={goal} /><Link className="goal-link" href={`/dashboard/${goal.id}`}>Continue this goal <span aria-hidden="true">↗</span></Link></article>)}</div> : <div className="state-card"><span className="empty-star" aria-hidden="true">✳</span><h2>Your first saved goal starts here.</h2><p>Preview a plan, then save it to keep your steps and progress in one place.</p><Link className="secondary-button" href="/#goal-form">Create your first plan</Link></div>)}
-  </>;
-}
+export function Dashboard() { return <MomentumDashboard/>; }
 export function GoalDetail({ id }: { id: string }) {
   const router = useRouter();
   const { state, reload, expire } = useGoals<{ goal: Goal }>(`/api/goals/${id}`);
@@ -52,15 +46,4 @@ export function GoalDetail({ id }: { id: string }) {
       <div className="delete-area">{confirmDelete ? <><p>Delete this goal and all its tasks? This cannot be undone.</p><button className="danger-button" disabled={!!pending} onClick={() => void remove()}>{pending === "delete" ? "Deleting…" : "Yes, delete this goal"}</button> <button className="text-button" disabled={!!pending} onClick={() => setConfirmDelete(false)}>Keep goal</button></> : <button className="text-button" disabled={!!pending} onClick={() => setConfirmDelete(true)}>Delete goal</button>}</div>
     </section>}
   </>;
-}
-export function SignOut() {
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  async function signOut() {
-    setBusy(true); setError("");
-    try { await api("/api/auth/signout", { method: "POST" }); router.replace("/"); router.refresh(); }
-    catch { setError("Couldn’t sign out. Please retry."); setBusy(false); }
-  }
-  return <div><button className="text-button" disabled={busy} onClick={() => void signOut()}>{busy ? "Signing out…" : "Sign out"}</button>{error && <p className="field-error" role="alert">{error}</p>}</div>;
 }

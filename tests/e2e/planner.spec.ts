@@ -7,9 +7,9 @@ test("goal input works and unsaved preview resets honestly on refresh", async ({
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await page.getByRole("button", { name: "Find my first step" }).click();
   await expect(page.locator("#goal-form").getByRole("alert")).toContainText("at least 8 characters");
-  await page.getByLabel("I want to…").fill("Prepare my software engineering MVP");
-  await page.getByLabel("Time for a first version").selectOption("120");
+  await page.getByLabel("What have you been meaning to do?").fill("Prepare my software engineering MVP");
   await page.getByRole("button", { name: "Find my first step" }).click();
+  await page.getByLabel("Time for a first version").selectOption("120");
   await expect(page.getByRole("heading", { name: "Prepare my software engineering MVP" })).toBeVisible();
   await expect(page.getByRole("listitem")).toHaveCount(5);
   await expect(page.getByText("Not saved", { exact: true })).toBeVisible();

@@ -19,7 +19,7 @@ test("real API routes reject cross-site mutations and invalid task input", async
 });
 test("saving a preview requires authentication or explicit configuration", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("I want to…").fill("Complete my database project");
+  await page.getByLabel("What have you been meaning to do?").fill("Complete my database project");
   await page.getByRole("button", { name: "Find my first step" }).click();
   const pending = page.waitForResponse((response) => response.url().endsWith("/api/goals") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Save to my goals" }).click();

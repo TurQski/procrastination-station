@@ -81,3 +81,9 @@ Development and production builds use Next.js’s supported Webpack option. Turb
 ESLint 9 is retained because the current Next.js React/import/accessibility plugins do not declare ESLint 10 compatibility. The previous full npm audit reported five high-severity development-tool advisory entries through Next.js’s lint plugin → fast-glob → micromatch → braces. At that checkpoint, the registry offered no patched compatible braces release; npm’s suggested downgrade to Next.js 14 lint tooling was not applied. The previous production-only audit reported zero vulnerabilities. Recheck this chain when upstream tooling is updated.
 
 The opt-in live browser command is npm run test:e2e:live. It uses the dedicated development project and two confirmed accounts; traces, screenshots and video are disabled. Never add these accounts to hosted CI. Normal CI remains credential-free.
+
+## v0 interface integration
+
+See [V0-INTEGRATION.md](V0-INTEGRATION.md). The homepage's compact workspace remains a labelled sample; the private My Momentum dashboard uses the existing authenticated APIs. src/lib/momentum.ts contains pure calculations, and the weekly chart accepts future daily history without showing fabricated activity. No backend or schema changes are needed.
+
+Live tests can optionally save safe visual-review captures when VISUAL_REVIEW_DIR is explicitly set. Captures are taken only on empty sign-in forms or post-authentication pages; traces and video remain disabled. Keep test credentials in ignored local files.

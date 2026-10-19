@@ -49,3 +49,27 @@ describe("saved goal workspace states", () => {
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 });
+
+describe('premium dashboard real-data boundaries',()=>{
+ it('renders zero-task goals without invented wins, next actions, or invalid percentages',async()=>{
+  fetcher.mockResolvedValue(response({goals:[{...goal,tasks:[]}]}));render(<Dashboard/>);
+  expect(await screen.findByRole('link',{name:goal.title})).toBeInTheDocument();
+  expect(screen.getByRole('img',{name:'Overall progress: 0% complete'})).toBeInTheDocument();
+  expect(screen.getByText('No tasks in this goal.')).toBeInTheDocument();
+  expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+  expect(screen.getByText('Your rhythm will take shape here.')).toBeInTheDocument();
+  expect(screen.queryByText(/Sample activity|Illustrative weekly total|Jordan/)).not.toBeInTheDocument();
+ });
+ it('saves task completion and keeps the active Tasks view while refreshing real progress',async()=>{
+  const user=userEvent.setup();let confirm!: (value:Response)=>void;
+  fetcher.mockResolvedValueOnce(response({goals:[goal]})).mockImplementationOnce(()=>new Promise<Response>(resolve=>{confirm=resolve})).mockResolvedValueOnce(response({goals:[{...goal,tasks:[{...goal.tasks[0],completed:true}]}]}));
+  render(<Dashboard/>);await screen.findByRole('link',{name:goal.title});
+  await user.click(screen.getAllByRole('button',{name:'Tasks'})[0]);
+  await user.click(screen.getAllByRole('checkbox')[0]);
+  expect(screen.getAllByRole('checkbox')[0]).toBeDisabled();
+  confirm(response({task:{id:'task-a',completed:true}}));
+  await waitFor(()=>expect(screen.getAllByRole('checkbox')[0]).toBeChecked());
+  expect(screen.getByRole('heading',{name:'Your next small steps'})).toBeInTheDocument();
+  expect(fetcher).toHaveBeenCalledWith('/api/tasks/task-a',expect.objectContaining({method:'PATCH',body:JSON.stringify({completed:true})}));
+ });
+});
