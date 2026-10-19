@@ -1,0 +1,61 @@
+# Secrets and local configuration (including example env files for now)
+.env
+.env.*
+*.env
+*.env.*
+.envrc
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+credentials*.json
+secrets.json
+secrets*.json
+.aws/
+.ssh/
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# JavaScript / TypeScript dependencies and generated output
+node_modules/
+.next/
+.nuxt/
+.output/
+.svelte-kit/
+dist/
+build/
+coverage/
+.cache/
+.turbo/
+*.tsbuildinfo
+.vercel/
+.netlify/
+
+# Python environments and generated output
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Runtime data and logs
+*.log
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.sqlite-wal
+*.sqlite-shm
+tmp/
