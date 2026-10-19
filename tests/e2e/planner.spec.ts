@@ -1,0 +1,22 @@
+import { test, expect } from "@playwright/test";
+test("goal input works and unsaved preview resets honestly on refresh", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/");
+  await expect(page).toHaveTitle(/Procrastination Station/);
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await page.getByRole("button", { name: "Find my first step" }).click();
+  await expect(page.locator("#goal-form").getByRole("alert")).toContainText("at least 8 characters");
+  await page.getByLabel("I want to…").fill("Prepare my software engineering MVP");
+  await page.getByLabel("Time for a first version").selectOption("120");
+  await page.getByRole("button", { name: "Find my first step" }).click();
+  await expect(page.getByRole("heading", { name: "Prepare my software engineering MVP" })).toBeVisible();
+  await expect(page.getByRole("listitem")).toHaveCount(5);
+  await expect(page.getByText("Not saved", { exact: true })).toBeVisible();
+  await expect(page.getByText(/120 minutes total/)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.reload();
+  await expect(page.getByText(/goals aren’t saved yet/)).toBeVisible();
+  await expect(page.getByRole("listitem")).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

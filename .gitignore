@@ -59,3 +59,7 @@ htmlcov/
 *.sqlite-wal
 *.sqlite-shm
 tmp/
+
+# Browser test output
+playwright-report/
+test-results/
